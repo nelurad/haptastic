@@ -1,0 +1,573 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Clack · Haptastic</title>
+<meta name="description" content="A Newton's cradle to play with: grab and pull the balls (several at once), flick them, hear the clack. Chrome, gold, glass or rainbow balls, one heavy ball, Moon or Jupiter gravity, bullet time, and an x-ray view of the momentum passing through.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&family=Geist+Mono:wght@400;500&family=Fraunces:ital,opsz,wght,SOFT,WONK@1,9..144,100..900,0..100,0..1&family=Homemade+Apple&display=swap">
+<style>
+  /* Layout: full-bleed studio with the cradle on a desk; title top-left, how-to top-right, one soft toolbar bottom-centre. Same family as Lump. */
+  :root{
+    --wall:#e9e1d6;
+    --wall2:#c4b6a6;
+    --ink:#3a2f29;
+    --soft:#6d5f55;
+    --chip:#fbf7f1;
+    --line:#3a2f2926;
+    --hot:#c8643c;
+    --grot:"Bricolage Grotesque","Helvetica Neue",Arial,system-ui,sans-serif;
+    --mono:"Geist Mono",ui-monospace,Menlo,monospace;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;overflow:hidden;color:var(--ink);background:radial-gradient(120% 90% at 50% 36%,var(--wall) 0%,#ddd2c5 55%,var(--wall2) 100%)}
+  body{font-family:var(--grot);-webkit-font-smoothing:antialiased;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+  #c{position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;display:block;touch-action:none}
+
+  header{position:fixed;top:env(safe-area-inset-top,0px);left:0;right:0;z-index:5;display:flex;justify-content:space-between;align-items:flex-start;gap:20px;padding:20px max(24px,env(safe-area-inset-right,0px)) 0 max(24px,env(safe-area-inset-left,0px));pointer-events:none}
+  header a{pointer-events:auto;font-size:13px;letter-spacing:.18em;text-transform:uppercase;text-decoration:none;color:var(--ink)}
+  .title h1{margin:10px 0 0;font-weight:400;line-height:1}
+  .title .script{display:block;font-family:"Fraunces",Georgia,serif;font-style:italic;font-weight:300;font-variation-settings:"opsz" 144,"SOFT" 100,"WONK" 1;font-size:clamp(40px,4.4vw,68px);letter-spacing:.01em}
+  .title .sub{display:block;font-family:"Homemade Apple","Snell Roundhand",cursive;font-size:clamp(12px,1vw,15px);color:var(--soft);margin-top:6px;transform:rotate(-2deg);transform-origin:left}
+  .how{margin:0;padding:0;list-style:none;font-family:var(--mono);font-size:11.5px;line-height:1.75;color:var(--soft);text-align:right}
+  .how b{font-weight:500;color:var(--ink)}
+
+  .bar{position:fixed;left:0;right:0;margin:0 auto;width:fit-content;bottom:max(18px,env(safe-area-inset-bottom,0px));z-index:6;display:flex;align-items:center;gap:4px;flex-wrap:wrap;justify-content:center;max-width:calc(100vw - 24px);background:#fbf7f1e0;border:1px solid var(--line);border-radius:999px;padding:6px 10px;box-shadow:0 10px 30px -18px #3a2f2980;backdrop-filter:blur(10px)}
+  .bar button{font:500 12.5px/1 var(--grot);color:var(--ink);background:transparent;border:1px solid transparent;border-radius:999px;padding:8px 11px;cursor:pointer;white-space:nowrap}
+  .bar button:hover{background:#3a2f290f}
+  .bar button:disabled{opacity:.35;cursor:default}
+  .bar button[aria-pressed="true"]{background:var(--ink);color:var(--chip)}
+  .bar button:focus-visible{outline:2px solid var(--hot);outline-offset:2px}
+  .sep{width:1px;height:22px;background:var(--line);margin:0 3px}
+  .grp{display:flex;gap:2px;align-items:center}
+  .grp .k{font:11px var(--mono);color:var(--soft);padding:0 4px 0 2px}
+  #count{font:500 12.5px var(--mono);min-width:1.4em;text-align:center}
+
+  #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(max(18px,env(safe-area-inset-bottom,0px)) + 58px);z-index:6;font:500 13px var(--grot);background:var(--ink);color:var(--chip);padding:8px 15px;border-radius:999px;opacity:0;transition:opacity .3s;pointer-events:none;max-width:calc(100vw - 24px);text-align:center}
+  #toast.on{opacity:1}
+  #toast b{color:#f3c38f;font-weight:600}
+  #bt{position:fixed;left:50%;top:22%;transform:translateX(-50%);z-index:4;font:500 12px var(--mono);letter-spacing:.3em;text-transform:uppercase;color:var(--hot);opacity:0;transition:opacity .2s;pointer-events:none}
+  #bt.on{opacity:.9}
+
+  body.thumb header,body.thumb .bar,body.thumb #toast,body.thumb #bt{display:none}
+  @media (max-width:860px){
+    .how{display:none}
+    .title h1{margin-top:6px}
+    .title .script{font-size:34px}
+    .title .sub{font-size:11px}
+    .bar{bottom:10px;border-radius:20px;gap:2px;padding:5px}
+    .bar button{padding:7px 8px;font-size:12px}
+    .sep{display:none}
+    .grp .k{display:none}
+    #toast{bottom:calc(max(10px,env(safe-area-inset-bottom,0px)) + 104px);border-radius:16px}
+  }
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+</head>
+<body>
+<canvas id="c" aria-label="A Newton's cradle on a desk. Drag a ball out to the side and let go. Drag the background to look around. Arrow keys launch the end balls; hold space for bullet time."></canvas>
+
+<header>
+  <div>
+    <a href="../">&larr; Haptastic</a>
+    <div class="title"><h1><span class="script">Clack</span><span class="sub">a newton's cradle, for your hands</span></h1></div>
+  </div>
+  <ul class="how">
+    <li><b>drag</b> a ball out · <b>let go</b></li>
+    <li>pull the 2nd ball and the end one comes too</li>
+    <li><b>two fingers</b> = both sides at once · <b>flick</b> to throw</li>
+    <li><b>drag the background</b> to look around</li>
+    <li><b>← →</b> launch · <b>shift</b> = two · hold <b>space</b> = bullet time</li>
+  </ul>
+</header>
+
+<div id="bt" aria-hidden="true">bullet time</div>
+<div id="toast" aria-live="polite"></div>
+
+<nav class="bar" aria-label="Cradle controls">
+  <div class="grp" role="group" aria-label="Number of balls"><span class="k">balls</span>
+    <button id="minus" aria-label="Fewer balls">&minus;</button><span id="count">5</span><button id="plus" aria-label="More balls">+</button>
+  </div>
+  <span class="sep"></span>
+  <div class="grp" role="group" aria-label="Ball material">
+    <button data-mat="chrome" aria-pressed="true">chrome</button>
+    <button data-mat="gold" aria-pressed="false">gold</button>
+    <button data-mat="glass" aria-pressed="false">glass</button>
+    <button data-mat="rainbow" aria-pressed="false">rainbow</button>
+  </div>
+  <span class="sep"></span>
+  <button id="heavy" aria-pressed="false" title="Make the left ball three times heavier">one heavy</button>
+  <button id="grav" title="Change gravity">earth</button>
+  <button id="slow" aria-pressed="false">slow-mo</button>
+  <button id="perp" aria-pressed="false" title="No air, perfectly bouncy: it never stops">perpetual</button>
+  <button id="xray" aria-pressed="false" title="Show velocity and the momentum passing through">x-ray</button>
+  <button id="snd" aria-pressed="true">sound</button>
+</nav>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+
+const THUMB = new URLSearchParams(location.search).has('thumb');
+if (THUMB) document.body.classList.add('thumb');
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const COARSE = matchMedia('(pointer: coarse)').matches;
+const $ = s => document.querySelector(s);
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+
+/* ---------------- world (1 unit = 1 cm) ---------------- */
+const R = 1, L = 9, CLEAR = 1.5;
+const GAP = R * .0006, D = 2 * R + GAP, SLOP = R * .003;   // the balls hang a hair apart, so a touch counts as contact
+const PIVOT_Y = R + CLEAR + L, ZF = 4.4, BASE_H = .9;
+const GRAV = [
+  { key: 'earth',   g: 981,  say: '<b>Earth</b>' },
+  { key: 'moon',    g: 162,  say: '<b>Moon</b>: a sixth of the pull, so every swing takes about 2½ times as long' },
+  { key: 'jupiter', g: 2479, say: '<b>Jupiter</b>: 2½ times Earth\'s pull, so it swings about 1.6 times faster' }
+];
+let n = 5, mat = 'chrome', heavy = false, gi = 0, slow = false, bullet = false, perpetual = false, xray = false, soundOn = true;
+
+/* ---------------- renderer, scene, camera ---------------- */
+const cv = $('#c');
+const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true, preserveDrawingBuffer: THUMB });
+renderer.setPixelRatio(Math.min(2, devicePixelRatio || 1));
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const scene = new THREE.Scene();
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(studio(), .02).texture;
+// what the balls see: a warm room the colour of the page, a dark desk below, and a few big soft lights
+function studio(){
+  const env = new THREE.Scene();
+  const geo = new THREE.SphereGeometry(100, 48, 24), col = [], c = new THREE.Color();
+  const top = new THREE.Color(0xf6eee4), mid = new THREE.Color(0xd9ccbc), low = new THREE.Color(0x2a211d);
+  const p = geo.attributes.position;
+  for (let i = 0; i < p.count; i++){
+    const y = p.getY(i) / 100;
+    if (y > 0) c.copy(mid).lerp(top, Math.pow(y, .6)); else c.copy(mid).lerp(low, Math.min(1, -y * 3.5));
+    col.push(c.r, c.g, c.b);
+  }
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  env.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide })));
+  const box = (w, h, x, y, z, k) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: new THREE.Color(k, k * .97, k * .92), side: THREE.DoubleSide }));
+    m.position.set(x, y, z); m.lookAt(0, 0, 0); env.add(m);
+  };
+  box(56, 26, -34, 58, 42, 9);     // big key softbox, up and to the left
+  box(16, 60, 70, 20, -10, 3.2);   // tall strip on the right
+  box(40, 10, 10, 30, -75, 2.4);   // back rim
+  box(30, 30, 0, 90, 0, 2);        // ceiling
+  box(26, 70, 55, 5, 55, .04);     // dark flags give chrome its contrast
+  box(22, 60, -70, 0, -30, .05);
+  box(90, 14, 0, -6, 80, .08);     // a dark band just below the horizon
+  return env;
+}
+scene.background = (() => {             // the same warm backdrop as the page, inside the scene, so glass can see through to it
+  const c = document.createElement('canvas'); c.width = 512; c.height = 512; const x = c.getContext('2d');
+  const gr = x.createRadialGradient(256, 184, 0, 256, 184, 520);
+  gr.addColorStop(0, '#e9e1d6'); gr.addColorStop(.46, '#ddd2c5'); gr.addColorStop(.85, '#c4b6a6');
+  x.fillStyle = gr; x.fillRect(0, 0, 512, 512);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+})();
+const camera = new THREE.PerspectiveCamera(32, 1, .1, 600);
+
+// pointer handling is registered before OrbitControls, so grabbing a ball can switch orbiting off first
+const drags = new Map();
+cv.addEventListener('pointerdown', onDown);
+const controls = new OrbitControls(camera, cv);
+controls.enableDamping = true; controls.dampingFactor = .08; controls.enablePan = false;
+controls.minPolarAngle = .45; controls.maxPolarAngle = 1.62;
+controls.minAzimuthAngle = -1.05; controls.maxAzimuthAngle = 1.05;
+controls.rotateSpeed = .6;
+
+const key = new THREE.DirectionalLight(0xfff6ea, 2.4);
+key.position.set(-14, 34, 20); key.castShadow = true;
+key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -.0004; key.shadow.normalBias = .02;
+Object.assign(key.shadow.camera, { left: -26, right: 26, top: 26, bottom: -26, near: 1, far: 90 });
+scene.add(key);
+scene.add(new THREE.HemisphereLight(0xfff4e6, 0x8a7a6e, .45));
+const desk = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), new THREE.ShadowMaterial({ opacity: .2 }));
+desk.rotation.x = -Math.PI / 2; desk.position.y = -BASE_H; desk.receiveShadow = true; scene.add(desk);
+
+/* ---------------- materials ---------------- */
+function ballMat(kind, i){
+  switch (kind){
+    case 'gold':    return new THREE.MeshPhysicalMaterial({ color: 0xffc56a, metalness: 1, roughness: .13 });
+    case 'glass':   return new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 0, roughness: 0, transmission: 1, thickness: 1.8, ior: 1.52, clearcoat: 1, attenuationColor: new THREE.Color(0xc4e6ff), attenuationDistance: 5, specularIntensity: 1 });
+    case 'rainbow': return new THREE.MeshPhysicalMaterial({ color: new THREE.Color().setHSL(((i || 0) / Math.max(1, n)) * .85, .75, .55), metalness: 1, roughness: .14, iridescence: .7, iridescenceIOR: 1.8, iridescenceThicknessRange: [150, 900] });
+    case 'heavy':   return new THREE.MeshPhysicalMaterial({ color: 0x4b5057, metalness: 1, roughness: .3 });
+    default:        return new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 1, roughness: .035 });
+  }
+}
+const frameMat = new THREE.MeshPhysicalMaterial({ color: 0xe9e9e9, metalness: 1, roughness: .1 });
+const baseMat = new THREE.MeshPhysicalMaterial({ color: 0x15100e, metalness: 0, roughness: .32, clearcoat: 1, clearcoatRoughness: .06 });
+const stringMat = new THREE.MeshBasicMaterial({ color: 0xd8d0c4, transparent: true, opacity: .85 });
+const capMat = new THREE.MeshPhysicalMaterial({ color: 0xdddddd, metalness: 1, roughness: .2 });
+
+/* ---------------- the rig ---------------- */
+let rig = null, balls = [], px = [], th = [], om = [], mass = [], kin = [], flash = [];
+const sphereGeo = new THREE.SphereGeometry(R, 64, 48);
+const capGeo = new THREE.CylinderGeometry(.14, .2, .32, 16);
+const ringGeo = new THREE.TorusGeometry(.13, .045, 8, 20);
+const strGeo = new THREE.CylinderGeometry(.022, .022, 1, 6); strGeo.translate(0, .5, 0);
+
+function build(){
+  if (rig){ scene.remove(rig); rig.traverse(o => { if (o.material && o.material !== frameMat && o.material !== baseMat && o.material !== stringMat && o.material !== capMat) o.material.dispose(); if (o.geometry && ![sphereGeo, capGeo, ringGeo, strGeo].includes(o.geometry)) o.geometry.dispose(); }); }
+  drags.clear(); controls.enabled = true;
+  rig = new THREE.Group(); scene.add(rig);
+  const X = (n - 1) / 2 * D + 2.6;
+  // lacquered base
+  const base = new THREE.Mesh(new RoundedBoxGeometry(2 * X + 3.2, BASE_H, 2 * ZF + 3.4, 5, .4), baseMat);
+  base.position.y = -BASE_H / 2; base.receiveShadow = true; base.castShadow = true; rig.add(base);
+  // chrome frame: two arches, front and back
+  const rc = 1.3;
+  for (const z of [-ZF, ZF]){
+    const p = new THREE.CurvePath();
+    p.add(new THREE.LineCurve3(new THREE.Vector3(-X, 0, z), new THREE.Vector3(-X, PIVOT_Y - rc, z)));
+    p.add(new THREE.QuadraticBezierCurve3(new THREE.Vector3(-X, PIVOT_Y - rc, z), new THREE.Vector3(-X, PIVOT_Y, z), new THREE.Vector3(-X + rc, PIVOT_Y, z)));
+    p.add(new THREE.LineCurve3(new THREE.Vector3(-X + rc, PIVOT_Y, z), new THREE.Vector3(X - rc, PIVOT_Y, z)));
+    p.add(new THREE.QuadraticBezierCurve3(new THREE.Vector3(X - rc, PIVOT_Y, z), new THREE.Vector3(X, PIVOT_Y, z), new THREE.Vector3(X, PIVOT_Y - rc, z)));
+    p.add(new THREE.LineCurve3(new THREE.Vector3(X, PIVOT_Y - rc, z), new THREE.Vector3(X, 0, z)));
+    const tube = new THREE.Mesh(new THREE.TubeGeometry(p, 240, .22, 20, false), frameMat);
+    tube.castShadow = true; rig.add(tube);
+    for (const x of [-X, X]){
+      const foot = new THREE.Mesh(new THREE.CylinderGeometry(.42, .5, .14, 24), frameMat);
+      foot.position.set(x, .07, z); foot.castShadow = true; rig.add(foot);
+    }
+  }
+  // balls
+  balls = []; px = []; th = []; om = []; mass = []; kin = []; flash = [];
+  for (let i = 0; i < n; i++){
+    px.push((i - (n - 1) / 2) * D); th.push(0); om.push(0); kin.push(false); flash.push(0);
+    const isHeavy = heavy && i === 0;
+    mass.push(isHeavy ? 3 : 1);
+    const m = new THREE.Mesh(sphereGeo, ballMat(isHeavy ? 'heavy' : mat, i));
+    m.castShadow = true;
+    const cap = new THREE.Mesh(capGeo, capMat); cap.position.y = R + .08; m.add(cap);
+    const ring = new THREE.Mesh(ringGeo, capMat); ring.position.y = R + .3; ring.rotation.y = Math.PI / 2; m.add(ring);
+    const strs = [-ZF, ZF].map(() => { const s = new THREE.Mesh(strGeo, stringMat); rig.add(s); return s; });
+    const arrow = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(), 1, 0xc8643c, .7, .45);
+    arrow.visible = false; rig.add(arrow);
+    rig.add(m);
+    balls.push({ m, strs, arrow });
+  }
+  $('#count').textContent = n;
+  $('#minus').disabled = n <= 2; $('#plus').disabled = n >= 9;
+  fit(true);
+  pose();
+}
+const bx = i => px[i] + L * Math.sin(th[i]);
+
+/* ---------------- camera fit ---------------- */
+let fitDist = 40;
+function fit(reset){
+  const w = innerWidth, h = innerHeight, aspect = w / h;
+  renderer.setSize(w, h, false); camera.aspect = aspect;
+  const X = (n - 1) / 2 * D + 2.6;
+  const t = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+  const narrow = w < 860;
+  const halfW = X + 4.5, halfH = (PIVOT_Y + 3) / 2 * (narrow ? 1.5 : 1.35);
+  fitDist = Math.max(halfW / (t * aspect), halfH / t) * 1.05;
+  controls.minDistance = fitDist * .4; controls.maxDistance = fitDist * 1.9;
+  const tgt = new THREE.Vector3(0, PIVOT_Y * .46 - (narrow ? 1.2 : .4), 0);
+  if (reset){
+    controls.target.copy(tgt);
+    const az = THUMB ? .32 : .38, pol = THUMB ? 1.33 : 1.3;
+    camera.position.set(tgt.x + fitDist * Math.sin(pol) * Math.sin(az), tgt.y + fitDist * Math.cos(pol), tgt.z + fitDist * Math.sin(pol) * Math.cos(az));
+  } else {
+    const dir = camera.position.clone().sub(controls.target).normalize();
+    controls.target.copy(tgt); camera.position.copy(tgt).addScaledVector(dir, fitDist);
+  }
+  camera.updateProjectionMatrix(); controls.update();
+}
+
+/* ---------------- physics ----------------
+   Each ball is a pendulum (angle th, angular velocity om). Gravity and a little air drag move the free
+   ones; then every pair of touching neighbours that is closing in exchanges an impulse along the line
+   between their centres. Sweeping the pairs again and again inside one tiny step is what passes the
+   momentum down the line: one ball in, one ball out; two in, two out. */
+const H = 1 / 3000;
+let hitMax = 0, hitPt = null, hitCount = 0;
+function stepPhysics(dt){
+  const steps = Math.max(1, Math.ceil(dt / H)), h = dt / steps;
+  const g = GRAV[gi].g, air = perpetual ? 0 : .1, e = perpetual ? 1 : .984;
+  for (const d of drags.values()) d.from = d.cur;
+  for (let s = 1; s <= steps; s++){
+    kin.fill(false);
+    for (let i = 0; i < n; i++){ om[i] += (-(g / L) * Math.sin(th[i]) - air * om[i]) * h; }
+    for (const d of drags.values()){ const k = d.k; kin[k] = true; d.cur = d.from + (d.target - d.from) * s / steps; }
+    for (let i = 0; i < n; i++) if (!kin[i]) th[i] += om[i] * h;
+    for (const d of drags.values()){ th[d.k] = d.cur; om[d.k] = d.om; carry(d.k); }
+    collide(e);
+  }
+}
+// a held ball shoves whatever is in its way, so pulling the 2nd ball brings the end ball along
+function carry(k){
+  for (let j = k - 1; j >= 0; j--){
+    const lim = bx(j + 1) - 2 * R;
+    if (bx(j) <= lim) break;
+    th[j] = Math.asin(clamp((lim - px[j]) / L, -1, 1)); om[j] = om[j + 1]; kin[j] = true;
+  }
+  for (let j = k + 1; j < n; j++){
+    const lim = bx(j - 1) + 2 * R;
+    if (bx(j) >= lim) break;
+    th[j] = Math.asin(clamp((lim - px[j]) / L, -1, 1)); om[j] = om[j - 1]; kin[j] = true;
+  }
+}
+function collide(e){
+  for (let it = 0; it < 4 * n; it++){
+    let any = false;
+    const fwd = it % 2 === 0;
+    for (let q = 0; q < n - 1; q++){
+      const i = fwd ? q : n - 2 - q, j = i + 1;
+      const si = Math.sin(th[i]), ci = Math.cos(th[i]), sj = Math.sin(th[j]), cj = Math.cos(th[j]);
+      const xi = px[i] + L * si, yi = -L * ci, xj = px[j] + L * sj, yj = -L * cj;
+      const dx = xj - xi, dy = yj - yi, dist = Math.hypot(dx, dy);
+      if (dist > 2 * R + SLOP) continue;
+      const nx = dx / dist, ny = dy / dist;
+      const tin = ci * nx + si * ny, tjn = cj * nx + sj * ny;           // how much each ball's swing points along the contact line
+      const wi = kin[i] ? 0 : tin * tin / mass[i], wj = kin[j] ? 0 : tjn * tjn / mass[j];
+      if (wi + wj < 1e-9) continue;
+      if (dist < 2 * R){                                                  // nudge out any overlap
+        const o = 2 * R - dist;
+        if (wi > 0 && Math.abs(tin) > .05) th[i] -= o * wi / (wi + wj) / (L * tin);
+        if (wj > 0 && Math.abs(tjn) > .05) th[j] += o * wj / (wi + wj) / (L * tjn);
+      }
+      const vn = L * (om[j] * tjn - om[i] * tin);
+      if (vn >= -1e-3) continue;
+      const J = -(1 + e) * vn / (wi + wj);
+      if (wi > 0) om[i] -= J * tin / (mass[i] * L);
+      if (wj > 0) om[j] += J * tjn / (mass[j] * L);
+      any = true;
+      flash[i] = Math.max(flash[i], clamp(-vn / 80, 0, 1)); flash[j] = Math.max(flash[j], clamp(-vn / 80, 0, 1));
+      if (-vn > hitMax){ hitMax = -vn; hitPt = [xi + nx * R, PIVOT_Y + yi + ny * R]; }
+      hitCount++;
+    }
+    if (!any) break;
+  }
+}
+
+/* ---------------- sound: the clack ----------------
+   A short, bright crack (a few stiff high modes of a steel ball that die in milliseconds) plus a tick of
+   noise. Glass rings longer and higher; gold is softer. In slow motion the sound slows down too. */
+const SND = {
+  chrome:  { noise: .55, hp: 2600, modes: [[3150, .011, .5], [4870, .008, .34], [7420, .006, .22], [980, .004, .18]] },
+  rainbow: { noise: .55, hp: 2600, modes: [[3150, .011, .5], [4870, .008, .34], [7420, .006, .22], [980, .004, .18]] },
+  gold:    { noise: .32, hp: 1500, modes: [[2250, .009, .5], [3650, .007, .3], [760, .005, .2]] },
+  glass:   { noise: .22, hp: 3200, modes: [[3950, .07, .42], [6150, .05, .3], [8800, .03, .14], [1400, .006, .12]] }
+};
+let actx = null, out = null, noiseBuf = null, lastClack = 0, lastBuzz = 0, touched = false;
+function ac(){
+  if (!actx){
+    actx = new (window.AudioContext || window.webkitAudioContext)();
+    const comp = actx.createDynamicsCompressor(); comp.threshold.value = -10; comp.ratio.value = 5; comp.attack.value = .001; comp.release.value = .1;
+    out = actx.createGain(); out.gain.value = .9;
+    const conv = actx.createConvolver(), len = actx.sampleRate * .9, b = actx.createBuffer(2, len, actx.sampleRate);
+    for (let c = 0; c < 2; c++){ const d = b.getChannelData(c); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3); }
+    conv.buffer = b; const wet = actx.createGain(); wet.gain.value = .12;
+    out.connect(comp); out.connect(conv); conv.connect(wet); wet.connect(comp); comp.connect(actx.destination);
+    noiseBuf = actx.createBuffer(1, actx.sampleRate * .03, actx.sampleRate);
+    const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+  if (actx.state === 'suspended') actx.resume();
+  return actx;
+}
+function clack(speed, x){
+  const now = performance.now();
+  if (COARSE && touched && navigator.vibrate && now - lastBuzz > 60){ navigator.vibrate(clamp(Math.round(speed / 5), 8, 35)); lastBuzz = now; }
+  if (!soundOn || !actx || actx.state !== 'running') return;
+  const c = actx, t = c.currentTime + .003, P = SND[heavy && hitInvolvesHeavy ? 'gold' : mat] || SND.chrome;
+  const amp = Math.pow(clamp(speed / 110, 0, 1.3), .9) * .55;
+  if (amp < .01) return;
+  const ts = bullet ? .38 : slow ? .62 : 1, stretch = bullet ? 4 : slow ? 2 : 1;
+  const pan = c.createStereoPanner ? c.createStereoPanner() : null, gOut = c.createGain(); gOut.gain.value = 1;
+  if (pan){ pan.pan.value = clamp(x / 12, -.7, .7); gOut.connect(pan); pan.connect(out); } else gOut.connect(out);
+  const s = c.createBufferSource(), hp = c.createBiquadFilter(), gn = c.createGain();
+  s.buffer = noiseBuf; s.playbackRate.value = ts; hp.type = 'highpass'; hp.frequency.value = P.hp * ts;
+  gn.gain.setValueAtTime(amp * P.noise, t); gn.gain.setTargetAtTime(0, t, .0012 * stretch);
+  s.connect(hp); hp.connect(gn); gn.connect(gOut); s.start(t); s.stop(t + .03 * stretch + .01);
+  for (const [f, dec, a] of P.modes){
+    const o = c.createOscillator(), g = c.createGain();
+    o.frequency.value = f * ts * (.985 + Math.random() * .03);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(a * amp, t + .0004);
+    g.gain.setTargetAtTime(0, t + .0004, dec * stretch);
+    o.connect(g); g.connect(gOut); o.start(t); o.stop(t + dec * stretch * 8 + .02);
+  }
+}
+
+/* ---------------- sparks at the contact point ---------------- */
+const sparkTex = (() => {
+  const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d');
+  const gr = x.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(.25, 'rgba(255,226,180,.8)'); gr.addColorStop(1, 'rgba(255,190,120,0)');
+  x.fillStyle = gr; x.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c);
+})();
+const sparks = [];
+for (let i = 0; i < 10; i++){
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: sparkTex, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0 }));
+  s.visible = false; scene.add(s); sparks.push({ s, t: -9, v: 0 });
+}
+let sparkI = 0;
+function spark(x, y, v){
+  const sp = sparks[sparkI++ % sparks.length]; sp.t = performance.now() / 1000; sp.v = v;
+  sp.s.position.set(x, y, 0); sp.s.visible = true;
+}
+
+/* ---------------- pointer: grab, drag, flick ---------------- */
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0), hitP = new THREE.Vector3();
+function setRay(e){ ndc.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1); ray.setFromCamera(ndc, camera); }
+function pickBall(e){
+  setRay(e);
+  const hits = ray.intersectObjects(balls.map(b => b.m), false);
+  if (hits.length) return balls.findIndex(b => b.m === hits[0].object);
+  // forgiving touch: the nearest ball centre within a radius and a bit
+  let best = -1, bd = R * 1.7;
+  balls.forEach((b, i) => { const d = ray.ray.distanceToPoint(b.m.position); if (d < bd){ bd = d; best = i; } });
+  return best;
+}
+function angleFrom(e, k){
+  setRay(e);
+  if (!ray.ray.intersectPlane(plane, hitP)) return null;
+  return clamp(Math.atan2(hitP.x - px[k], PIVOT_Y - hitP.y), -1.6, 1.6);
+}
+function onDown(e){
+  ac(); touched = true;
+  const k = pickBall(e);
+  if (k < 0 || [...drags.values()].some(d => d.k === k)) return;
+  controls.enabled = false;
+  try { cv.setPointerCapture(e.pointerId); } catch (_) {}
+  const a = angleFrom(e, k);
+  drags.set(e.pointerId, { k, target: a == null ? th[k] : a, cur: th[k], from: th[k], om: 0, last: th[k] });
+  cv.style.cursor = 'grabbing';
+}
+cv.addEventListener('pointermove', e => {
+  const d = drags.get(e.pointerId);
+  if (d){ const a = angleFrom(e, d.k); if (a != null) d.target = a; return; }
+  if (e.pointerType === 'mouse' && !e.buttons) cv.style.cursor = pickBall(e) >= 0 ? 'grab' : 'default';
+});
+function onUp(e){
+  const d = drags.get(e.pointerId); if (!d) return;
+  drags.delete(e.pointerId);
+  om[d.k] = clamp(d.om, -14, 14);
+  for (let i = 0; i < n; i++) if (kin[i]) om[i] = clamp(om[i], -14, 14);
+  if (!drags.size){ controls.enabled = true; cv.style.cursor = 'grab'; }
+}
+cv.addEventListener('pointerup', onUp); cv.addEventListener('pointercancel', onUp);
+cv.addEventListener('contextmenu', e => e.preventDefault());
+
+/* ---------------- keyboard ---------------- */
+function launch(side, count){
+  ac(); count = Math.min(count, n - 1);
+  const a = .72;
+  for (let c = 0; c < count; c++){ const i = side < 0 ? c : n - 1 - c; th[i] = side * a; om[i] = 0; }
+}
+addEventListener('keydown', e => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.code === 'Space'){ e.preventDefault(); if (!bullet){ bullet = true; $('#bt').classList.add('on'); } return; }
+  if (e.code === 'ArrowLeft'){ e.preventDefault(); if (!e.repeat) launch(-1, e.shiftKey ? 2 : 1); }
+  if (e.code === 'ArrowRight'){ e.preventDefault(); if (!e.repeat) launch(1, e.shiftKey ? 2 : 1); }
+});
+addEventListener('keyup', e => { if (e.code === 'Space'){ bullet = false; $('#bt').classList.remove('on'); } });
+
+/* ---------------- toolbar ---------------- */
+let toastT = 0;
+function toast(html){ const el = $('#toast'); el.innerHTML = html; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 4200); }
+$('#minus').addEventListener('click', () => { if (n > 2){ n--; build(); } });
+$('#plus').addEventListener('click', () => { if (n < 9){ n++; build(); } });
+document.querySelectorAll('[data-mat]').forEach(b => b.addEventListener('click', () => {
+  mat = b.dataset.mat;
+  document.querySelectorAll('[data-mat]').forEach(x => x.setAttribute('aria-pressed', x === b));
+  balls.forEach((bb, i) => { if (heavy && i === 0) return; bb.m.material.dispose(); bb.m.material = ballMat(mat, i); });
+}));
+$('#heavy').addEventListener('click', e => {
+  heavy = !heavy; e.currentTarget.setAttribute('aria-pressed', heavy);
+  mass[0] = heavy ? 3 : 1; balls[0].m.material.dispose(); balls[0].m.material = ballMat(heavy ? 'heavy' : mat, 0);
+  if (heavy) toast('The dark ball weighs <b>three times</b> as much. Swing it in and more than one ball has to leave to carry its momentum and energy away');
+});
+$('#grav').addEventListener('click', e => { gi = (gi + 1) % GRAV.length; e.currentTarget.textContent = GRAV[gi].key; toast(GRAV[gi].say); });
+$('#slow').addEventListener('click', e => { slow = !slow; e.currentTarget.setAttribute('aria-pressed', slow); if (slow) toast('<b>Slow motion</b>: a quarter speed. Hold <b>space</b> for bullet time'); });
+$('#perp').addEventListener('click', e => { perpetual = !perpetual; e.currentTarget.setAttribute('aria-pressed', perpetual); toast(perpetual ? '<b>Perpetual</b>: no air and perfectly bouncy balls, so it never stops. A real cradle loses about 2% at every clack' : 'Back to <b>real</b>: a little air drag, and each clack loses a bit of energy as sound and heat'); });
+$('#xray').addEventListener('click', e => { xray = !xray; e.currentTarget.setAttribute('aria-pressed', xray); if (xray) toast('<b>X-ray</b>: arrows are velocity, and the glow is momentum passing straight through the still balls'); });
+$('#snd').addEventListener('click', e => { soundOn = !soundOn; e.currentTarget.setAttribute('aria-pressed', soundOn); });
+document.querySelectorAll('.bar button').forEach(b => b.addEventListener('pointerdown', () => ac()));
+
+/* ---------------- drawing ---------------- */
+const tmpA = new THREE.Vector3(), tmpB = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0), dirV = new THREE.Vector3();
+const orange = new THREE.Color(0xff7a3c);
+function place(){
+  for (let i = 0; i < n; i++){
+    const b = balls[i], s = Math.sin(th[i]), c = Math.cos(th[i]);
+    const x = px[i] + L * s, y = PIVOT_Y - L * c;
+    b.m.position.set(x, y, 0); b.m.rotation.set(0, 0, th[i]);
+    // two strings in a V up to the front and back rails
+    tmpA.set(x - (R + .3) * s, y + (R + .3) * c, 0);
+    b.strs.forEach((st, k) => {
+      tmpB.set(px[i], PIVOT_Y, k ? ZF : -ZF);
+      dirV.copy(tmpB).sub(tmpA); const len = dirV.length(); dirV.divideScalar(len);
+      st.position.copy(tmpA); st.quaternion.setFromUnitVectors(up, dirV); st.scale.set(1, len, 1);
+    });
+    // momentum glow and velocity arrows
+    const f = flash[i] * (xray ? 1 : .22);
+    b.m.material.emissive = orange; b.m.material.emissiveIntensity = f * 1.6;
+    const v = om[i] * L;
+    b.arrow.visible = xray && Math.abs(v) > 4;
+    if (b.arrow.visible){
+      b.arrow.position.set(x, y, R + .4);
+      b.arrow.setDirection(tmpB.set(c * Math.sign(v), s * Math.sign(v), 0));
+      b.arrow.setLength(clamp(Math.abs(v) * .035, 1, 7), .7, .45);
+    }
+  }
+}
+function pose(){
+  if (THUMB){ th[0] = -.68; return; }
+  if (!RM && !started){
+    started = true;
+    th[0] = -.7;
+    const fake = { k: 0, target: -.7, cur: -.7, from: -.7, om: 0, last: -.7 };
+    drags.set('demo', fake);
+    setTimeout(() => { if (drags.get('demo') === fake){ drags.delete('demo'); if (!drags.size) controls.enabled = true; } }, 1100);
+  }
+}
+let started = false;
+let last = performance.now();
+function frame(now){
+  const fdt = Math.min(.05, (now - last) / 1000); last = now;
+  const ts = bullet ? .06 : slow ? .25 : 1;
+  const sdt = fdt * ts;
+  if (!THUMB && sdt > 0){
+    for (const d of drags.values()){
+      const dth = d.target - d.last;
+      d.om = d.om * .5 + (dth / Math.max(1e-4, sdt)) * .5; d.last = d.target;
+    }
+    hitMax = 0; hitPt = null; hitCount = 0;
+    stepPhysics(sdt);
+    if (hitMax > 3.5 && now - lastClack > 22){
+      lastClack = now; clack(hitMax, hitPt[0]);
+      spark(hitPt[0], hitPt[1], clamp(hitMax / 120, .15, 1));
+    }
+  }
+  const fd = Math.exp(-fdt * (bullet ? 4 : slow ? 9 : 22));
+  for (let i = 0; i < n; i++) flash[i] *= fd;
+  place();
+  const t = now / 1000;
+  for (const sp of sparks){
+    if (!sp.s.visible) continue;
+    const a = (t - sp.t) / (bullet ? .9 : slow ? .35 : .14);
+    if (a >= 1 || RM){ sp.s.visible = false; continue; }
+    sp.s.material.opacity = (1 - a) * sp.v; const sc = (.6 + a * 1.6) * (1 + sp.v);
+    sp.s.scale.set(sc, sc, 1);
+  }
+  controls.update();
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+let rt = 0;
+addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => fit(false), 100); });
+build();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

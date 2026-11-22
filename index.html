@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Haptastic</title>
+<meta name="description" content="Things to touch: squishy, clacky, satisfying toys that run in your browser, by Nelu Radpour.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&family=Geist+Mono:wght@400;500&family=Fraunces:ital,opsz,wght,SOFT,WONK@1,9..144,100..900,0..100,0..1&family=Homemade+Apple&family=Permanent+Marker&display=swap">
+<style>
+  /* Layout: a hero sheet of bubble wrap to pop, a short about, then the big-type index (same family as VisualStims and SoundBites, in blush and bubblegum). */
+  :root{
+    --page:#f3e8e2;
+    --page2:#e8d6cd;
+    --ink:#2e2430;
+    --soft:#5f4f58;
+    --dim:#8c7a82;
+    --rule:#2e243026;
+    --hot:#d9506a;
+    --grot:"Bricolage Grotesque","Helvetica Neue",Arial,system-ui,sans-serif;
+    --mono:"Geist Mono",ui-monospace,Menlo,monospace;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--page);color:var(--ink)}
+  body{font-family:var(--grot);font-variation-settings:"opsz" 18;line-height:1.35;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+  a{color:inherit}
+  .gut{padding-left:max(28px,env(safe-area-inset-left,0px));padding-right:max(28px,env(safe-area-inset-right,0px))}
+
+  header{position:fixed;top:env(safe-area-inset-top,0px);left:0;right:0;z-index:10;display:flex;justify-content:space-between;align-items:center;padding-block:22px;pointer-events:none}
+  header a{pointer-events:auto}
+  .mark{display:flex;align-items:center;gap:12px;text-decoration:none;font-weight:400;font-size:15px;letter-spacing:.2em;text-transform:uppercase}
+  .mark svg{width:30px;height:30px;overflow:visible}
+  nav.links{display:flex;gap:28px;font-size:16px;text-transform:lowercase}
+  nav.links a{text-decoration:none;opacity:.85}
+  nav.links a:hover{opacity:1;text-decoration:underline;text-underline-offset:5px;text-decoration-thickness:1px}
+
+  .hero{position:relative;height:100vh;height:100svh;display:flex;align-items:flex-end;padding-block:0 9vh;background:radial-gradient(120% 90% at 50% 40%,var(--page) 0%,var(--page2) 100%);overflow:hidden;user-select:none;-webkit-user-select:none}
+  #wrap{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:pan-y;cursor:pointer}
+  .hero h1{position:relative;margin:0;font-weight:340;font-size:clamp(46px,6.6vw,104px);line-height:.98;pointer-events:none;padding:.1em .4em .2em .2em;border-radius:28px;background:radial-gradient(closest-side,#f3e8e2f0 60%,#f3e8e200)}
+  .hero h1 .script{display:block;font-family:"Homemade Apple","Snell Roundhand","Segoe Script",cursive;font-weight:400;font-size:.95em;line-height:1.5;padding-left:.32em}
+  .hero h1 .rest{display:block;font-family:"Fraunces",Georgia,serif;font-style:italic;font-weight:300;font-size:1.32em;line-height:1.05;letter-spacing:.015em;font-variation-settings:"opsz" 144,"SOFT" 100,"WONK" 1;padding-left:.5em}
+  .hero h1 .rest .ch{display:inline-block;color:color-mix(in oklab,var(--ink),var(--hot) calc(var(--i)*9%));animation:boing 2.2s cubic-bezier(.3,1.6,.5,1) infinite;animation-delay:calc(var(--i) * -.13s);transform-origin:50% 90%}
+  .hero h1 .rest .w{white-space:nowrap}
+  @keyframes boing{0%,100%{transform:scale(1,1)}20%{transform:scale(1.12,.86)}40%{transform:scale(.94,1.08)}60%{transform:scale(1,1)}}
+  .hud{position:absolute;right:max(28px,env(safe-area-inset-right,0px));bottom:9vh;display:flex;gap:12px;align-items:center;font:12px var(--mono);color:var(--dim);letter-spacing:.06em}
+  .hud button{pointer-events:auto;font:500 12px var(--grot);color:var(--ink);background:#fff9;border:1px solid var(--rule);border-radius:999px;padding:7px 12px;cursor:pointer;opacity:0;transition:opacity .4s}
+  .hud button.on{opacity:1}
+  @media (prefers-reduced-motion: reduce){.hero h1 .rest .ch{animation:none}}
+
+  .about{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:48px;align-items:start;padding-block:12vh 10vh}
+  .about h2{margin:0 0 34px;font-family:"Permanent Marker","Marker Felt","Comic Sans MS",cursive;font-weight:400;font-size:clamp(30px,3.1vw,46px);line-height:1.18;text-wrap:balance}
+  .about p{margin:0 0 18px;font-size:clamp(17px,1.35vw,20px);line-height:1.32;max-width:36em;color:var(--soft)}
+  .about p a{text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:1px}
+  .hand{width:min(260px,60%);height:auto;color:var(--hot);justify-self:center}
+
+  .index{padding-block:2vh 5vh}
+  .index .lab{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin:0 0 6px}
+  .row{display:grid;grid-template-columns:4.6em minmax(0,1fr);align-items:center;gap:16px;border-top:1px solid var(--rule);padding-block:18px 22px;text-decoration:none;position:relative}
+  .row:last-child{border-bottom:1px solid var(--rule)}
+  .row .n{justify-self:start;font-family:"Fraunces",Georgia,serif;font-style:italic;font-weight:400;font-variation-settings:"opsz" 72,"SOFT" 100,"WONK" 1;font-size:clamp(20px,2vw,28px);line-height:1;color:var(--hot);width:1.9em;height:1.9em;display:grid;place-items:center;border:1.5px dashed currentColor;border-radius:58% 42% 51% 49%/46% 55% 45% 54%;animation:nwob 7s ease-in-out infinite;animation-delay:var(--nd,0s)}
+  @keyframes nwob{0%,100%{border-radius:58% 42% 51% 49%/46% 55% 45% 54%;transform:rotate(var(--nr,-8deg))}50%{border-radius:44% 56% 47% 53%/56% 44% 57% 43%;transform:rotate(calc(var(--nr,-8deg) * -1))}}
+  .row:nth-child(3n) .n{--nr:7deg;--nd:-2s} .row:nth-child(3n+1) .n{--nr:-11deg;--nd:-4.5s}
+  .row .t{color:color-mix(in oklab,var(--ink) 70%,var(--page));font-family:"Fraunces",Georgia,serif;font-style:italic;font-weight:300;font-variation-settings:"opsz" 144,"SOFT" 100,"WONK" 1;font-size:clamp(40px,7vw,112px);line-height:1.05;white-space:nowrap;transition:transform .35s ease,color .35s ease}
+  .row .t .c{display:inline-block;will-change:transform}
+  a.row:hover .t,a.row:focus-visible .t{transform:translateX(.12em);color:var(--hot)}
+  a.row:focus-visible{outline:none}
+  .row .mobile-pic{display:none}
+  #peek{position:fixed;left:0;top:0;width:320px;aspect-ratio:3/2;max-width:40vw;pointer-events:none;z-index:20;opacity:0;transform:translate(-50%,-50%) scale(.85) rotate(-3deg);transition:opacity .25s ease,transform .25s ease;border-radius:4px;overflow:hidden;box-shadow:0 20px 40px -20px #2e243099}
+  #peek img{width:100%;height:100%;object-fit:cover;display:block}
+  #peek.on{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(-3deg)}
+
+  footer{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;padding-block:22px 34px;margin-top:8vh;border-top:1px solid var(--rule);font-family:var(--mono);font-size:12px;color:var(--dim)}
+
+  @media (max-width:820px){
+    .about{grid-template-columns:1fr}
+    .row{grid-template-columns:3.6em minmax(0,1fr)}
+    .row .t{white-space:normal}
+    .row .mobile-pic{display:block;grid-column:2;width:100%;max-width:420px;height:auto;aspect-ratio:3/2;object-fit:cover;border-radius:4px;margin-top:8px}
+    nav.links{gap:16px;font-size:14px}
+    .hud{left:28px;right:auto;bottom:auto;top:84px}
+  }
+  @media (max-width:560px){
+    .mark{letter-spacing:.14em;font-size:13px;gap:8px}
+    nav.links a.far{display:none}
+  }
+  @media (prefers-reduced-motion: reduce){ .row .t{transition:none} #peek{transition:none} }
+</style>
+</head>
+<body>
+<header class="gut">
+  <a class="mark" href="./" aria-label="Haptastic home">
+    <svg viewBox="0 0 30 30" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round">
+      <path d="M15 4c-6 0-10 4.5-10 10.5"/><path d="M15 4c6 0 10 4.5 10 10.5 0 3-.6 5.6-1.8 8"/>
+      <path d="M15 8c-4 0-6.5 3-6.5 7 0 4 1 7.4 3 10"/><path d="M15 8c4 0 6.5 3 6.5 7 0 2.5-.3 4.6-1 6.6"/>
+      <path d="M15 12c-2 0-3 1.5-3 3.6 0 3.4.9 6.4 2.6 9"/><path d="M15 12c2 0 3 1.6 3 3.8 0 3-.5 5.6-1.6 8"/>
+      <path d="M15 15.5v3c0 2.4.4 4.6 1.3 6.6"/>
+    </svg>
+    Haptastic
+  </a>
+  <nav class="links" aria-label="Elsewhere">
+    <a href="/visualstims/">visualstims</a>
+    <a href="/soundbites/">soundbites</a>
+    <a class="far" href="/neurosims/">neurosims</a>
+    <a class="far" href="/">nelu radpour</a>
+  </nav>
+</header>
+
+<section class="hero gut">
+  <canvas id="wrap" aria-label="A sheet of bubble wrap. Tap the bubbles, or drag across them, to pop them."></canvas>
+  <h1><span class="script">Go on,</span><span class="rest">touch it</span></h1>
+  <div class="hud"><span id="count">pop some bubbles</span><button id="fresh">fresh sheet</button></div>
+</section>
+
+<section class="about gut">
+  <div>
+    <h2>Haptastic is for things that just feel good to touch</h2>
+    <p>No lessons and no goals: just toys to squish, pull, swing and fidget with. Each one tries hard to feel like the real thing, so the clay gives way under your finger and the steel balls clack. They run live in your browser, on a phone or with a mouse, and use as many fingers as you've got.</p>
+    <p>It's a sister site to <a href="/visualstims/">VisualStims</a>, for looking at brain science, and <a href="/soundbites/">SoundBites</a>, for things to play and listen to.</p>
+  </div>
+  <svg class="hand" viewBox="0 0 200 200" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" id="ripples"></svg>
+</section>
+
+<section class="index gut" aria-labelledby="tx">
+  <p class="lab" id="tx">Things to touch</p>
+  <a class="row" data-fx="squish" href="lump/" data-peek="lump/thumb.jpg">
+    <span class="n">1</span>
+    <span class="t">Lump</span>
+    <img class="mobile-pic" src="lump/thumb.jpg" alt="A lump of terracotta clay, pinched and pulled into a soft, lumpy shape" width="900" height="600" loading="lazy">
+  </a>
+  <a class="row" data-fx="clack" href="clack/" data-peek="clack/thumb.jpg">
+    <span class="n">2</span>
+    <span class="t">Clack</span>
+    <img class="mobile-pic" src="clack/thumb.jpg" alt="A chrome Newton's cradle on a black lacquer base, the end ball lifted and about to swing" width="900" height="600" loading="lazy">
+  </a>
+</section>
+
+<footer class="gut">
+  <span>made by nelu radpour · florida state university</span>
+</footer>
+
+<div id="peek" aria-hidden="true"><img alt=""></div>
+
+<script>
+/* ---- hero: bubble wrap ---- */
+(function(){
+'use strict';
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const COARSE = matchMedia('(pointer: coarse)').matches;
+const cv = document.getElementById('wrap'), g = cv.getContext('2d');
+let W = 0, H = 0, DPR = 1, B = [], s = 50, popped = 0;
+function layout(){
+  DPR = Math.min(2, devicePixelRatio || 1);
+  const r = cv.getBoundingClientRect(); W = r.width; H = r.height;
+  cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+  s = Math.max(40, Math.min(66, W / 17));
+  const old = new Map(B.map(b => [b.key, b]));
+  B = [];
+  const rows = Math.ceil(H / (s * .866)) + 1, cols = Math.ceil(W / s) + 1;
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++){
+    const key = r + ',' + c, o = old.get(key);
+    B.push({ key, x: c * s + (r % 2 ? s / 2 : 0), y: r * s * .866 + s * .45, popped: o ? o.popped : false, t: o ? o.t : -9, seed: (r * 73 + c * 151) % 997, sq: 0 });
+  }
+  popped = B.filter(b => b.popped).length; hud();
+}
+const near = (x, y) => { let best = null, bd = s * .46; for (const b of B){ const d = Math.hypot(b.x - x, b.y - y); if (d < bd){ bd = d; best = b; } } return best; };
+
+let ctx = null, noise = null;
+function ac(){
+  if (!ctx){
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    noise = ctx.createBuffer(1, ctx.sampleRate * .05, ctx.sampleRate);
+    const d = noise.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+  if (ctx.state === 'suspended') ctx.resume();
+}
+function popSound(){
+  if (!ctx || ctx.state !== 'running') return;
+  const t = ctx.currentTime + .002, v = .5 + Math.random() * .4;
+  const n = ctx.createBufferSource(), bp = ctx.createBiquadFilter(), g1 = ctx.createGain();
+  n.buffer = noise; n.playbackRate.value = .8 + Math.random() * .5;
+  bp.type = 'bandpass'; bp.frequency.value = 1400 + Math.random() * 1600; bp.Q.value = 1.2;
+  g1.gain.setValueAtTime(v * .9, t); g1.gain.setTargetAtTime(0, t, .006 + Math.random() * .004);
+  n.connect(bp); bp.connect(g1); g1.connect(ctx.destination); n.start(t); n.stop(t + .05);
+  const o = ctx.createOscillator(), g2 = ctx.createGain();
+  o.frequency.setValueAtTime(260 + Math.random() * 120, t); o.frequency.exponentialRampToValueAtTime(70, t + .03);
+  g2.gain.setValueAtTime(v * .35, t); g2.gain.setTargetAtTime(0, t, .012);
+  o.connect(g2); g2.connect(ctx.destination); o.start(t); o.stop(t + .08);
+}
+function pop(b){
+  if (!b || b.popped) return;
+  b.popped = true; b.t = performance.now() / 1000; popped++;
+  popSound();
+  if (COARSE && navigator.vibrate) navigator.vibrate(12);
+  hud();
+}
+function hud(){
+  const left = B.length - popped;
+  document.getElementById('count').textContent = popped ? `${popped} popped · ${left} to go` : 'pop some bubbles';
+  document.getElementById('fresh').classList.toggle('on', popped > 8);
+}
+document.getElementById('fresh').addEventListener('click', () => { B.forEach(b => { b.popped = false; b.t = performance.now() / 1000; b.fresh = true; }); popped = 0; hud(); });
+
+let down = false, hx = -999, hy = -999;
+const pos = e => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+cv.addEventListener('pointerdown', e => { ac(); down = true; const [x, y] = pos(e); pop(near(x, y)); });
+cv.addEventListener('pointermove', e => { const [x, y] = pos(e); hx = x; hy = y; if (down || e.pointerType !== 'mouse' && e.pressure > 0) pop(near(x, y)); });
+addEventListener('pointerup', () => down = false);
+cv.addEventListener('pointerleave', () => { hx = hy = -999; down = false; });
+
+function crinkle(b, r){       // a popped bubble: a flat, wrinkled ring of plastic
+  g.beginPath();
+  for (let k = 0; k <= 12; k++){
+    const a = k / 12 * Math.PI * 2, j = .78 + .22 * Math.sin(b.seed + k * 2.3);
+    const x = b.x + Math.cos(a) * r * j, y = b.y + Math.sin(a) * r * j;
+    k ? g.lineTo(x, y) : g.moveTo(x, y);
+  }
+  g.closePath();
+}
+function frame(){
+  const now = performance.now() / 1000;
+  g.setTransform(DPR, 0, 0, DPR, 0, 0); g.clearRect(0, 0, W, H);
+  const r0 = s * .4;
+  for (const b of B){
+    const dt = now - b.t;
+    if (b.popped){
+      g.fillStyle = 'rgba(255,255,255,.18)'; crinkle(b, r0 * .95); g.fill();
+      g.strokeStyle = 'rgba(46,36,48,.14)'; g.lineWidth = 1; g.stroke();
+      if (dt < .25 && !RM){ g.strokeStyle = `rgba(217,80,106,${(1 - dt / .25) * .6})`; g.lineWidth = 2; g.beginPath(); g.arc(b.x, b.y, r0 * (1 + dt * 4), 0, 7); g.stroke(); }
+      continue;
+    }
+    const hov = Math.hypot(b.x - hx, b.y - hy) < s * .46;
+    b.sq += ((hov ? 1 : 0) - b.sq) * .25;
+    const grow = b.fresh && dt < .5 && !RM ? Math.min(1, dt * 3 + (b.seed % 7) * -.06) : 1;
+    if (grow <= 0) continue;
+    const r = r0 * grow * (1 - b.sq * .08);
+    // shadow, body, highlight
+    g.fillStyle = 'rgba(80,40,50,.10)'; g.beginPath(); g.ellipse(b.x + r * .12, b.y + r * .2, r, r * .96, 0, 0, 7); g.fill();
+    const gr = g.createRadialGradient(b.x - r * .35, b.y - r * .4, r * .05, b.x, b.y, r);
+    gr.addColorStop(0, 'rgba(255,255,255,.95)'); gr.addColorStop(.25, 'rgba(255,255,255,.35)'); gr.addColorStop(.8, 'rgba(255,240,244,.12)'); gr.addColorStop(1, 'rgba(160,110,125,.28)');
+    g.fillStyle = gr; g.beginPath(); g.ellipse(b.x, b.y, r * (1 + b.sq * .06), r * (1 - b.sq * .05), 0, 0, 7); g.fill();
+    g.strokeStyle = 'rgba(255,255,255,.55)'; g.lineWidth = 1.2; g.beginPath(); g.arc(b.x, b.y, r * .72, Math.PI * 1.05, Math.PI * 1.55); g.stroke();
+  }
+  requestAnimationFrame(frame);
+}
+let rt = 0; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(layout, 120); });
+layout(); requestAnimationFrame(frame);
+
+/* ripples beside the about text: a fingertip's touch spreading out */
+const svg = document.getElementById('ripples');
+[22, 40, 58, 76, 94].forEach((r, i) => { const c = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse'); c.setAttribute('cx', 100); c.setAttribute('cy', 110); c.setAttribute('rx', r); c.setAttribute('ry', r * .62); c.setAttribute('opacity', (1 - i * .18).toFixed(2)); svg.appendChild(c); });
+const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle'); dot.setAttribute('cx', 100); dot.setAttribute('cy', 110); dot.setAttribute('r', 6); dot.setAttribute('fill', 'currentColor'); svg.appendChild(dot);
+
+/* floating preview over the index */
+const peek = document.getElementById('peek'), pimg = peek.querySelector('img');
+document.querySelectorAll('a.row[data-peek]').forEach(a => {
+  a.addEventListener('pointerenter', e => { if (e.pointerType !== 'mouse') return; pimg.src = a.dataset.peek; peek.classList.add('on'); });
+  a.addEventListener('pointerleave', () => peek.classList.remove('on'));
+});
+addEventListener('pointermove', e => { peek.style.left = (e.clientX + 170) + 'px'; peek.style.top = e.clientY + 'px'; }, {passive:true});
+})();
+</script>
+<script>
+/* bouncy hero letters */
+(function(){
+  const rest = document.querySelector('.hero h1 .rest'); if (!rest) return;
+  const txt = rest.textContent; rest.textContent = ''; rest.setAttribute('aria-label', txt);
+  let i = 0;
+  txt.split(/(\s+)/).forEach(part => {
+    if (!part) return;
+    if (/^\s+$/.test(part)){ rest.appendChild(document.createTextNode(part)); return; }
+    const w = document.createElement('span'); w.className = 'w'; w.setAttribute('aria-hidden', 'true');
+    for (const c of part){ const s = document.createElement('span'); s.className = 'ch'; s.textContent = c; s.style.setProperty('--i', i++); w.appendChild(s); }
+    rest.appendChild(w);
+  });
+})();
+</script>
+<script>
+/* each name moves like its toy */
+(function(){
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const rows = [...document.querySelectorAll('.row[data-fx]')].map(row => {
+    const t = row.querySelector('.t'); const txt = t.textContent; t.textContent = ''; t.setAttribute('aria-label', txt);
+    const cs = [...txt].map((ch, i) => { const s = document.createElement('span'); s.className = 'c'; s.setAttribute('aria-hidden', 'true'); s.textContent = ch === ' ' ? ' ' : ch; t.appendChild(s); return { el: s, i }; });
+    return { fx: row.dataset.fx, cs, row, on: true };
+  });
+  const io = new IntersectionObserver(es => es.forEach(e => { const r = rows.find(r => r.row === e.target); if (r) r.on = e.isIntersecting; }));
+  rows.forEach(r => io.observe(r.row));
+  function frame(now){
+    const t = now / 1000;
+    for (const r of rows){
+      if (!r.on) continue;
+      const n = r.cs.length;
+      r.cs.forEach(c => {
+        const i = c.i; let tf = '';
+        switch (r.fx){
+          case 'squish': { const q = Math.sin(t * 2.2 - i * .9), k = Math.max(0, q) * .12; tf = `scale(${(1 + k).toFixed(3)}, ${(1 - k * .8).toFixed(3)})`; c.el.style.transformOrigin = '50% 85%'; break; }
+          case 'clack': {     // the end letters swing out like the end balls, taking turns
+            const p = Math.sin(t * 4.4);
+            c.el.style.transformOrigin = '50% -60%';
+            if (i === 0 && p < 0) tf = `rotate(${(-p * 20).toFixed(2)}deg)`;
+            if (i === n - 1 && p > 0) tf = `rotate(${(-p * 20).toFixed(2)}deg)`;
+            break;
+          }
+        }
+        c.el.style.transform = tf;
+      });
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
