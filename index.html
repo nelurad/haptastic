@@ -134,6 +134,11 @@
     <span class="t">Clack</span>
     <img class="mobile-pic" src="clack/thumb.jpg" alt="A chrome Newton's cradle on a black lacquer base, the end ball lifted and about to swing" width="900" height="600" loading="lazy">
   </a>
+  <a class="row" data-fx="skip" href="skip/" data-peek="skip/thumb.jpg">
+    <span class="n">3</span>
+    <span class="t">Skip</span>
+    <img class="mobile-pic" src="skip/thumb.jpg" alt="A flat stone skipping across a lake at golden hour, rings spreading behind it on the glittering water" width="900" height="600" loading="lazy">
+  </a>
 </section>
 
 <footer class="gut">
@@ -158,7 +163,7 @@ let hx = -999, hy = -999, down = false;
 
 function layout(){
   const r = cv.getBoundingClientRect(); W = r.width; H = r.height;
-  s = Math.max(42, Math.min(70, W / 16));
+  s = Math.max(66, Math.min(112, W / 11));
   const old = new Map(B.map(b => [b.key, b]));
   B = [];
   rows = Math.ceil(H / (s * .866)) + 2; cols = Math.ceil(W / s) + 2;
@@ -300,10 +305,10 @@ void main(){
   vec3 n = normalize(vec3(-sf.y + wav.x, -sf.z + wav.y, 1.0));
 
   // shadow on the paper below, from bubbles up and to the left of here, with a caustic where the dome focuses light
-  float d2, pop2; vec3 s2 = surf(p - vec2(0.12, 0.18) * uS, d2, pop2);
+  float d2, pop2; vec3 s2 = surf(p - vec2(0.14, 0.2) * uS, d2, pop2);
   float hs = s2.x / (uS * 0.27);
-  float shadow = 0.2 * smoothstep(0.02, 0.5, hs) * (1.0 - 0.7 * smoothstep(0.7, 1.0, hs));
-  float caust = 0.22 * smoothstep(0.82, 1.0, hs) * (1.0 - pop2);
+  float shadow = 0.15 * smoothstep(0.02, 0.5, hs) * (1.0 - 0.6 * smoothstep(0.7, 1.0, hs));
+  float caust = 0.09 * smoothstep(0.85, 1.0, hs) * (1.0 - pop2);
 
   // the paper seen through the plastic, bent by the dome
   vec2 off = -n.xy * h * 1.1;
@@ -313,7 +318,7 @@ void main(){
   float cosT = clamp(n.z, 0.0, 1.0);
   float F = 0.04 + 0.96 * pow(1.0 - cosT, 5.0);
   float inDome = step(d, 1.0) * (1.0 - pop);
-  float thick = inDome * (0.025 + 0.1 * smoothstep(0.6, 1.0, d));
+  float thick = inDome * (0.015 + 0.05 * smoothstep(0.7, 1.0, d));
   vec3 col = bg * vec3(0.972, 0.982, 0.995) * (1.0 - thick) * (1.0 - F);
 
   // reflections: the room, a big soft window up-left with a cross bar, and a small lamp down-right
@@ -321,7 +326,7 @@ void main(){
   float env = 0.4 + 0.3 * Rv.z;
   vec2 bx = Rv.xy - vec2(-0.46, -0.55);
   bx = mat2(0.94, -0.34, 0.34, 0.94) * bx;
-  float win = smoothstep(0.15, 0.11, abs(bx.x)) * smoothstep(0.11, 0.075, abs(bx.y));
+  float win = smoothstep(0.2, 0.15, abs(bx.x)) * smoothstep(0.14, 0.1, abs(bx.y));
   win *= 1.0 - 0.75 * smoothstep(0.012, 0.0, abs(bx.x)) - 0.75 * smoothstep(0.01, 0.0, abs(bx.y));
   float lamp = pow(max(dot(Rv, normalize(vec3(0.5, 0.42, 0.75))), 0.0), 140.0);
   vec3 refl = vec3(env) + vec3(1.0, 0.99, 0.97) * win * 24.0 + vec3(1.0, 0.96, 0.92) * lamp * 9.0;
@@ -484,6 +489,11 @@ addEventListener('pointermove', e => { peek.style.left = (e.clientX + 170) + 'px
         const i = c.i; let tf = '';
         switch (r.fx){
           case 'squish': { const q = Math.sin(t * 2.2 - i * .9), k = Math.max(0, q) * .12; tf = `scale(${(1 + k).toFixed(3)}, ${(1 - k * .8).toFixed(3)})`; c.el.style.transformOrigin = '50% 85%'; break; }
+          case 'skip': {      // letters hop in turn, each hop lower than the last, like a skipping stone
+            const cyc = 2.6, ph = (t % cyc) / cyc * (n + 2) - .5, k = Math.floor(ph), f = ph - k;
+            if (i === k){ const hgt = .16 * Math.pow(.7, i); tf = `translateY(${(-Math.sin(f * Math.PI) * hgt).toFixed(3)}em)`; }
+            break;
+          }
           case 'clack': {     // the end letters swing out like the end balls, taking turns
             const p = Math.sin(t * 4.4);
             c.el.style.transformOrigin = '50% -60%';
